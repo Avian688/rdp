@@ -439,50 +439,6 @@ void Rdp::refreshDisplay() const
     getDisplayString().setTagArg("t", 0, buf2);
 }
 
-void Rdp::printConnRequestMap()
-{
-    auto iterrr = requestCONNMap.begin();
-    int index = 0;
-    while (iterrr != requestCONNMap.end()) {
-        index++;
-        iterrr++;
-    }
-
-}
-
-bool Rdp::allConnFinished()
-{
-    bool connDone;
-
-    auto iter = requestCONNMap.begin();
-    int ii = 0;
-    while (iter != requestCONNMap.end()) {
-        connDone = iter->second->isConnFinished();
-        if (connDone == false) {
-            return false;
-        }
-        ++iter;
-        ++ii;
-    }
-    //cancelRequestTimer();
-    return true;
-}
-
-void Rdp::updateConnMap()
-{
-    a: bool connDone;
-    auto iter = requestCONNMap.begin();
-
-    while (iter != requestCONNMap.end()) {
-        connDone = iter->second->isConnFinished();
-        if (connDone == true) {
-            requestCONNMap.erase(iter);
-            goto a;
-        }
-        ++iter;
-    }
-}
-
 std::ostream& operator<<(std::ostream &os, const Rdp::SockPair &sp)
 {
     os << "locSocket=" << sp.localAddr << ":" << sp.localPort << " " << "remSocket=" << sp.remoteAddr << ":" << sp.remotePort;

@@ -36,7 +36,6 @@ struct RdpStateVariables
     uint32 additiveIncreasePackets;
     uint32 slowStartPacketsToSend;
     uint32 outOfWindowPackets;
-    bool connFinished;
     bool slowStartState;
     bool congestionInWindow;
     bool waitToStart;
@@ -52,7 +51,6 @@ struct RdpStateVariables
     uint32 numberSentPackets;
 
     bool connNotAddedYet;
-    bool isfinalReceivedPrintedOut;
 };
 
 class RdpSendQueue extends cObject

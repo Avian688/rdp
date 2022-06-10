@@ -36,13 +36,10 @@ RdpStateVariables::RdpStateVariables()
     outOfWindowPackets = 0;
     waitToStart = false;
     ssthresh = 0;
-    connFinished = false;
-    isfinalReceivedPrintedOut = false;
     numRcvdPkt = 0;
     delayedNackNo = 0;
     connNotAddedYet = true;
     cwnd = 0;
-    sendPulls = true;
     active = false;
     pacingTime = 0;
 

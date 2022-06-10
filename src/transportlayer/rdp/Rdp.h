@@ -177,9 +177,6 @@ public:
     {
         return msl;
     }
-    virtual bool allConnFinished();
-    virtual void updateConnMap();
-    virtual void printConnRequestMap();
 };
 
 } // namespace rdp

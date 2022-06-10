@@ -1,16 +1,16 @@
 
-#include "RdpAIMD.h"
+#include "RdpAIAD.h"
 #include "../Rdp.h"
 
 namespace inet {
 namespace rdp {
 
-Register_Class(RdpAIMD);
+Register_Class(RdpAIAD);
 
-simsignal_t RdpAIMD::cwndSignal = cComponent::registerSignal("cwnd");    // will record changes to snd_cwnd
-simsignal_t RdpAIMD::ssthreshSignal = cComponent::registerSignal("ssthresh");    // will record changes to ssthresh
+simsignal_t RdpAIAD::cwndSignal = cComponent::registerSignal("cwnd");    // will record changes to snd_cwnd
+simsignal_t RdpAIAD::ssthreshSignal = cComponent::registerSignal("ssthresh");    // will record changes to ssthresh
 
-RdpAIMDStateVariables::RdpAIMDStateVariables()
+RdpAIADStateVariables::RdpAIADStateVariables()
 {
     internal_request_id = 0;
     request_id = 0;  // source block number (8-bit unsigned integer)
@@ -39,43 +39,43 @@ RdpAIMDStateVariables::RdpAIMDStateVariables()
     active = false;
 }
 
-RdpAIMD::RdpAIMD() :
-        RdpAlgorithm(), state((RdpAIMDStateVariables*&) RdpAlgorithm::state)
+RdpAIAD::RdpAIAD() :
+        RdpAlgorithm(), state((RdpAIADStateVariables*&) RdpAlgorithm::state)
 {
 
 }
 
-RdpAIMD::~RdpAIMD()
+RdpAIAD::~RdpAIAD()
 {
 
 }
 
-void RdpAIMD::initialize()
+void RdpAIAD::initialize()
 {
 
 }
 
-void RdpAIMD::connectionClosed()
+void RdpAIAD::connectionClosed()
 {
 
 }
 
-void RdpAIMD::processTimer(cMessage *timer, RdpEventCode &event)
+void RdpAIAD::processTimer(cMessage *timer, RdpEventCode &event)
 {
 
 }
 
-void RdpAIMD::dataSent(uint32 fromseq)
+void RdpAIAD::dataSent(uint32 fromseq)
 {
 
 }
 
-void RdpAIMD::ackSent()
+void RdpAIAD::ackSent()
 {
 
 }
 
-void RdpAIMD::receivedHeader(unsigned int seqNum)
+void RdpAIAD::receivedHeader(unsigned int seqNum)
 {
     EV_INFO << "Header arrived at the receiver" << endl;
     conn->sendNackRdp(seqNum);
@@ -92,8 +92,7 @@ void RdpAIMD::receivedHeader(unsigned int seqNum)
         state->congestionInWindow = true;  //may have to change so certain amount of headers before multiplicative decrease
         state->ssthresh = state->cwnd/2;  //ssthresh, half of cwnd at loss event
         conn->emit(ssthreshSignal, state->ssthresh);
-        //state->cwnd = state->cwnd/2;
-        state->cwnd = state->cwnd/2;
+        state->cwnd = state->cwnd - 1;
         if(state->cwnd == 0) state->cwnd = 1;
         //if(state->receivedPacketsInWindow >= state->cwnd){
             state->outOfWindowPackets = state->sentPullsInWindow - state->cwnd;
@@ -125,7 +124,7 @@ void RdpAIMD::receivedHeader(unsigned int seqNum)
     conn->emit(cwndSignal, state->cwnd);
 }
 
-void RdpAIMD::receivedData(unsigned int seqNum)
+void RdpAIAD::receivedData(unsigned int seqNum)
 {
     int pullPacketsToSend = 0;
     bool windowIncreased = false;

@@ -76,7 +76,6 @@ public:
     int sentPullsInWindow;
     int additiveIncreasePackets;
     int outOfWindowPackets;
-    bool connFinished;
     int numPacketsToGet;
     int numPacketsToSend;
     bool congestionInWindow;
@@ -90,9 +89,6 @@ public:
     int numberSentPackets;
 
     bool connNotAddedYet;
-    bool isfinalReceivedPrintedOut;
-
-    bool sendPulls;
 
     //Number of packets currently in flight. Inferred by IW and number of PR added
     int packetsInFlight;
@@ -189,8 +185,6 @@ protected:
 
 public:
     virtual int getNumRcvdPackets();
-    virtual bool isConnFinished();
-    virtual void setConnFinished();
 
 protected:
     cPacketQueue pullQueue;

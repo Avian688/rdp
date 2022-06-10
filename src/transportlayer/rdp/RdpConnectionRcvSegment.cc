@@ -210,19 +210,9 @@ int RdpConnection::getPullsQueueLength()
     return len;
 }
 
-bool RdpConnection::isConnFinished()
-{
-    return state->connFinished;
-}
-
 int RdpConnection::getNumRcvdPackets()
 {
     return state->numberReceivedPackets;
-}
-
-void RdpConnection::setConnFinished()
-{
-    state->connFinished = true;
 }
 
 void RdpConnection::sendPacketToApp(unsigned int seqNum){
@@ -271,7 +261,6 @@ void RdpConnection::closeConnection(){
     EV_INFO << " numRcvTrimmedHeader:    " << state->numRcvTrimmedHeader << endl;
     EV_INFO << "CONNECTION FINISHED!" << endl;
     sendIndicationToApp(RDP_I_PEER_CLOSED); // this is ok if the sinkApp is used by one conn
-    state->isfinalReceivedPrintedOut = true;
     cancelRequestTimer();
 }
 RdpEventCode RdpConnection::processSegmentInListen(Packet *packet, const Ptr<const RdpHeader> &rdpseg, L3Address srcAddr, L3Address destAddr)

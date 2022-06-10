@@ -366,17 +366,35 @@ void RdpConnection::paceChanged(double newPace){
         // if sendingTime + newPace <= simTime(), else sendingTime + newPace.
         
         if(paceTimerMsg->isScheduled()){
-            simtime_t sendingTime = paceTimerMsg->getSendingTime();
+            simtime_t arrivalTime = paceTimerMsg->getArrivalTime();
+            simtime_t sendingTime = arrivalTime-state->pacingTime;
+            simtime_t checkSendingTime = paceTimerMsg->getSendingTime();
+
+            std::cout << "\n Calculated sending time: " << arrivalTime-sendingTime << endl;
+            std::cout << "\n Actual sending time: " << checkSendingTime << endl;
+
+            std::cout << "\n Current pace should be: " << arrivalTime-sendingTime << endl;
+            std::cout << "\n State current pace (actual): " << state->pacingTime << endl;
+            std::cout << "\n New Pace: " << newPace << endl;
+            std::cout << "\n New sending time: " << arrivalTime-state->pacingTime << endl;
             simtime_t newArrivalTime;
             if (sendingTime + newPace <= simTime()){
                 newArrivalTime = simTime();
+                std::cout << "\n new Arrival time is right now" << endl;
             }else{
                 newArrivalTime = sendingTime + newPace;
             }
 
-            cancelEvent(paceTimerMsg);
-            take(paceTimerMsg);
-            scheduleAt(newArrivalTime, paceTimerMsg);
+            if(newPace < state->pacingTime){
+                std::cout << "\n newPace < oldPace" << endl;
+            }
+
+            if(newArrivalTime < arrivalTime){
+                std::cout << "\nScheduling new timer!" << endl;
+                cancelEvent(paceTimerMsg);
+                take(paceTimerMsg);
+                scheduleAt(newArrivalTime, paceTimerMsg);
+            }
         }
 }
 
