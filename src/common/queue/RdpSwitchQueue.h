@@ -35,6 +35,12 @@ namespace queueing {
 class INET_API RdpSwitchQueue : public PacketQueueBase, public cListener
 {
   protected:
+    int numPushedHeaderPackets = -1;
+    int numPulledHeaderPackets = -1;
+    int numRemovedHeaderPackets = -1;
+    int numDroppedHeaderPackets = -1;
+    int numCreatedHeaderPackets = -1;
+
     // configuration
     int packetCapacity;
     int mthresh;
@@ -60,7 +66,12 @@ class INET_API RdpSwitchQueue : public PacketQueueBase, public cListener
     static simsignal_t dataQueueLengthSignal;
     static simsignal_t headersQueueLengthSignal;
     static simsignal_t numTrimmedPktSig;
-    static simsignal_t queueingTimeSignal;
+    static simsignal_t dataQueueingTimeSignal;
+    static simsignal_t headerQueueingTimeSignal;
+
+    static simsignal_t headerPacketPulledSignal;
+    static simsignal_t headerPacketDroppedSignal;
+    static simsignal_t headerPacketRemovedSignal;
 
   protected:
     virtual void initialize(int stage) override;
@@ -68,6 +79,11 @@ class INET_API RdpSwitchQueue : public PacketQueueBase, public cListener
 
   public:
     virtual ~RdpSwitchQueue() {}
+
+
+    //override to distinguish dataPacketSignal from headerPacketSignal
+    virtual void emit(simsignal_t signal, cObject *object, cObject *details) override;
+
 
     virtual int getMaxNumPackets() const override { return packetCapacity; }
     virtual int getNumPackets() const override;
@@ -94,7 +110,6 @@ class INET_API RdpSwitchQueue : public PacketQueueBase, public cListener
     virtual Packet *canPullPacket(cGate *gate) const override { return !isEmpty() ? getPacket(0) : nullptr; }
     virtual Packet *pullPacket(cGate *gate) override;
 
-    virtual void receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details) override;
     virtual void finish() override;
 };
 

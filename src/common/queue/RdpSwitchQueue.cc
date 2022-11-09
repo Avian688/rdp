@@ -31,10 +31,36 @@ namespace inet {
 namespace queueing {
 Define_Module(RdpSwitchQueue);
 
-simsignal_t RdpSwitchQueue::queueingTimeSignal = registerSignal("queueingTime");
+simsignal_t RdpSwitchQueue::dataQueueingTimeSignal = registerSignal("dataQueueingTime");
+simsignal_t RdpSwitchQueue::headerQueueingTimeSignal = registerSignal("headerQueueingTime");
 simsignal_t RdpSwitchQueue::dataQueueLengthSignal = registerSignal("dataQueueLength");
 simsignal_t RdpSwitchQueue::headersQueueLengthSignal = registerSignal("headersQueueLength");
 simsignal_t RdpSwitchQueue::numTrimmedPktSig = registerSignal("numTrimmedPkt");
+simsignal_t RdpSwitchQueue::headerPacketPulledSignal = registerSignal("headerPacketPulled");
+simsignal_t RdpSwitchQueue::headerPacketDroppedSignal = registerSignal("headerPacketDropped");
+simsignal_t RdpSwitchQueue::headerPacketRemovedSignal = registerSignal("headerPacketRemoved");
+
+
+
+void RdpSwitchQueue::emit(simsignal_t signal, cObject *object, cObject *details)
+{
+    if (signal == packetPushedSignal)
+        numPushedPackets++;
+    else if (signal == packetPulledSignal)
+        numPulledPackets++;
+    else if (signal == packetRemovedSignal)
+        numRemovedPackets++;
+    else if (signal == packetDroppedSignal)
+        numDroppedPackets++;
+    else if (signal == headerPacketPulledSignal)
+        numPulledHeaderPackets++;
+    else if (signal == headerPacketRemovedSignal)
+        numRemovedHeaderPackets++;
+    else if (signal == headerPacketDroppedSignal)
+        numDroppedHeaderPackets++;
+    cSimpleModule::emit(signal, object, details);
+}
+
 
 void RdpSwitchQueue::initialize(int stage)
 {
@@ -46,6 +72,16 @@ void RdpSwitchQueue::initialize(int stage)
         headersQueueLength = 0;
         synAckQueueLength=0;
         numTrimmedPkt=0;
+
+        numPushedHeaderPackets = 0;
+        numPulledHeaderPackets = 0;
+        numRemovedHeaderPackets = 0;
+        numDroppedHeaderPackets = 0;
+        numCreatedHeaderPackets = 0;
+        WATCH(numPushedHeaderPackets);
+        WATCH(numPulledHeaderPackets);
+        WATCH(numRemovedHeaderPackets);
+        WATCH(numDroppedHeaderPackets);
 
         producer = findConnectedModule<IActivePacketSource>(inputGate);
         collector = findConnectedModule<IActivePacketSink>(outputGate);
@@ -190,7 +226,7 @@ Packet *RdpSwitchQueue::pullPacket(cGate *gate) {
         packetEvent->setQueueDataLength(getSynAckQueueTotalLength());
         insertPacketEvent(this, packet, PEK_QUEUED, queueingTime, packetEvent);
         increaseTimeTag<QueueingTimeTag>(packet, queueingTime, queueingTime);
-        emit(packetPulledSignal, packet);
+        PacketProcessorBase::emit(headerPacketPulledSignal, packet);
         animatePullPacket(packet, outputGate);
         updateDisplayString();
         return packet;
@@ -204,7 +240,7 @@ Packet *RdpSwitchQueue::pullPacket(cGate *gate) {
         packetEvent->setQueueDataLength(getTotalLength());
         insertPacketEvent(this, packet, PEK_QUEUED, queueingTime, packetEvent);
         increaseTimeTag<QueueingTimeTag>(packet, queueingTime, queueingTime);
-        emit(packetPulledSignal, packet);
+        PacketProcessorBase::emit(packetPulledSignal, packet);
         cSimpleModule::emit(dataQueueLengthSignal, dataQueue.getLength());
         animatePullPacket(packet, outputGate);
         updateDisplayString();
@@ -219,7 +255,7 @@ Packet *RdpSwitchQueue::pullPacket(cGate *gate) {
         packetEvent->setQueueDataLength(getHeaderQueueTotalLength());
         insertPacketEvent(this, packet, PEK_QUEUED, queueingTime, packetEvent);
         increaseTimeTag<QueueingTimeTag>(packet, queueingTime, queueingTime);
-        emit(packetPulledSignal, packet);
+        PacketProcessorBase::emit(headerPacketPulledSignal, packet);
         cSimpleModule::emit(headersQueueLengthSignal, headersQueue.getLength());
         animatePullPacket(packet, outputGate);
         updateDisplayString();
@@ -234,7 +270,7 @@ Packet *RdpSwitchQueue::pullPacket(cGate *gate) {
         packetEvent->setQueueDataLength(getTotalLength());
         insertPacketEvent(this, packet, PEK_QUEUED, queueingTime, packetEvent);
         increaseTimeTag<QueueingTimeTag>(packet, queueingTime, queueingTime);
-        emit(packetPulledSignal, packet);
+        PacketProcessorBase::emit(packetPulledSignal, packet);
         cSimpleModule::emit(dataQueueLengthSignal, dataQueue.getLength());
         animatePullPacket(packet, outputGate);
         updateDisplayString();
@@ -250,7 +286,7 @@ Packet *RdpSwitchQueue::pullPacket(cGate *gate) {
         packetEvent->setQueueDataLength(getHeaderQueueTotalLength());
         insertPacketEvent(this, packet, PEK_QUEUED, queueingTime, packetEvent);
         increaseTimeTag<QueueingTimeTag>(packet, queueingTime, queueingTime);
-        emit(packetPulledSignal, packet);
+        PacketProcessorBase::emit(headerPacketPulledSignal, packet);
         cSimpleModule::emit(headersQueueLengthSignal, headersQueue.getLength());
         animatePullPacket(packet, outputGate);
         EV_INFO << " get from header queue- size = " << packet->getByteLength() << endl;
@@ -266,7 +302,7 @@ void RdpSwitchQueue::removePacket(Packet *packet)
     Enter_Method("removePacket");
     EV_INFO << "Removing packet " << packet->getName() << " from the queue." << endl;
     dataQueue.remove(packet);
-    emit(packetRemovedSignal, packet);
+    PacketProcessorBase::emit(packetRemovedSignal, packet);
     updateDisplayString();
 }
 
@@ -292,17 +328,6 @@ void RdpSwitchQueue::removeAllPackets()
     updateDisplayString();
 }
 
-void RdpSwitchQueue::receiveSignal(cComponent *source, simsignal_t signal, cObject *object, cObject *details)
-{
-    Enter_Method("%s", cComponent::getSignalName(signal));
-    if (signal == packetDroppedSignal)
-        numDroppedPackets++;
-    else if (signal == packetCreatedSignal)
-        numCreatedPackets++;
-    else
-        throw cRuntimeError("Unknown signal");
-    updateDisplayString();
-}
 
 void RdpSwitchQueue::finish(){
     recordScalar("numTrimmedPkt ",numTrimmedPkt );
@@ -311,4 +336,3 @@ void RdpSwitchQueue::finish(){
 
 }
 } // namespace inet
-

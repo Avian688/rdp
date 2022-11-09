@@ -15,14 +15,13 @@
 
 package rdp.common.queue;
 
-import inet.queueing.base.PacketQueueBase;
-import inet.queueing.contract.IPacketQueue;
+import inet.queueing.queue.DropTailQueue;
 
-simple RdpSwitchQueue extends PacketQueueBase like IPacketQueue
+
+simple RdpSwitchQueue extends DropTailQueue
 {
     parameters:
         @class("inet::queueing::RdpSwitchQueue");
-        int packetCapacity = default(8); //= default(100);
         string queueNameData = default("L2DataQueue"); // name of the inner cQueue object, used in the 'q' tag of the display string
         string queueNameHeader = default("L2HeadersQueue"); // name of the inner cQueue object, used in the 'q' tag of the display string
         
@@ -30,18 +29,17 @@ simple RdpSwitchQueue extends PacketQueueBase like IPacketQueue
         
         @display("i=block/queue");
         
-        @signal[packetPushStarted](type=inet::Packet);
-        @signal[packetPushEnded](type=inet::Packet?);
-        @signal[packetPulled](type=inet::Packet);
-        @signal[packetRemoved](type=inet::Packet);
-        @signal[packetDropped](type=inet::Packet);
-        
+        @signal[headerPacketPulled](type=inet::Packet);
+        @signal[headerPacketRemoved](type=inet::Packet);
+        @signal[headerPacketDropped](type=inet::Packet);
+
         @signal[dataQueueLength](type=long);
         @signal[headersQueueLength](type=long);
         @signal[numTrimmedPkt](type=long);
         
-        @statistic[queueingTime](title="queueing times"; source=queueingTime(localSignal(packetPulled)); record=histogram,vector; unit=s; interpolationmode=none);
-        
+        @statistic[dataQueueingTime](title="data queueing times"; source=queueingTime(localSignal(packetPulled)); record=histogram,vector; unit=s; interpolationmode=none);
+        @statistic[headerQueueingTime](title="header queueing times"; source=queueingTime(localSignal(headerPacketPulled)); record=histogram,vector; unit=s; interpolationmode=none);
+
         //@statistic[rcvdPk](title="received packets"; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
         //@statistic[dropPk](title="dropped packets"; source=dropPkByQueue; record=count,"sum(packetBytes)","vector(packetBytes)"; interpolationmode=none);
         //@statistic[queueingTime](title="queueing time"; record=histogram,vector; interpolationmode=none);
